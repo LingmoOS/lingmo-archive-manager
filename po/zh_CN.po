@@ -18,3 +18,52 @@ msgstr "全部解压"
 #: src/main.cpp
 msgid "No archive open"
 msgstr "未打开压缩包"
+
+#: src
+msgid "New Archive"
+msgstr ""
+
+#: src
+msgid "Folder"
+msgstr ""
+
+#: src
+msgid "Name"
+msgstr ""
+
+#: src
+msgid "Size"
+msgstr ""
+
+#: src
+msgid "Modified"
+msgstr ""
+
+#: src
+msgid "Open an archive to see its contents"
+msgstr ""
+
+#: src
+msgid "Choose where to extract"
+msgstr ""
+
+#: src
+msgid "Extract Here"
+msgstr ""
+
+#: src
+msgid "Extracting…"
+msgstr ""
+
+#: src
+msgid "Selected "
+msgstr ""
+
+#: src
+msgid " files to "
+msgstr ""
+
+#: src
+msgid " skipped"
+msgstr ""
+

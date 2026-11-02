@@ -54,6 +54,17 @@ std::string dateText(const archivemanager::Entry& entry)
     return buffer;
 }
 
+std::string humanSize(uint64_t bytes)
+{
+    if (bytes < 1024)
+        return std::to_string(bytes) + " B";
+    if (bytes < 1024 * 1024)
+        return std::to_string(bytes / 1024) + " KB";
+    if (bytes < 1024ull * 1024 * 1024)
+        return std::to_string(bytes / (1024 * 1024)) + " MB";
+    return std::to_string(bytes / (1024ull * 1024 * 1024)) + " GB";
+}
+
 class EntryRow : public View
 {
 public:
@@ -146,6 +157,7 @@ public:
         m_compress = addChild<Button>(tr("New Archive"));
         m_open = addChild<Button>(tr("Open"));
         m_extract = addChild<Button>(tr("Extract All"));
+        m_extract->setEnabled(false);
         m_info = addChild<Label>(tr("No archive open"));
         m_info->setFontSize(13);
         m_info->setColor(ColorRecipe(ColorId::DisabledText));
@@ -159,6 +171,11 @@ public:
         }
         m_columnSize->setTextAlignment(Label::TextAlignment::Right);
         m_columnDate->setTextAlignment(Label::TextAlignment::Right);
+        m_emptyHint = addChild<Label>(tr("Open an archive to see its contents"));
+        m_emptyHint->setFontSize(14);
+        m_emptyHint->setColor(ColorRecipe(ColorId::DisabledText));
+        m_emptyHint->setTextAlignment(Label::TextAlignment::Center);
+        m_emptyHint->setVerticallyCentered(true);
         m_scroll = addChild<ScrollView>();
         m_scroll->setName("entryScroll");
         m_rows = m_scroll->setContent<Column>();
@@ -182,15 +199,21 @@ public:
             m_info->setText(listing.error.empty() ? tr("Could not read this archive") : listing.error);
             m_status->setText({});
             m_extract->setText(tr("Extract All"));
+            m_extract->setEnabled(false);
+            m_emptyHint->setVisible(true);
             requestLayout();
             return;
         }
         std::string info = std::to_string(listing.entries.size()) + tr(" entries");
         if (!formatLabel.empty())
             info += "  " + formatLabel;
+        if (listing.totalSize > 0)
+            info += "  · " + humanSize(listing.totalSize);
         if (listing.unsafePaths > 0)
             info += "  · " + std::to_string(listing.unsafePaths) + tr(" unsafe paths");
         m_info->setText(info);
+        m_emptyHint->setVisible(listing.entries.empty());
+        m_extract->setEnabled(!listing.entries.empty());
         for (size_t i = 0; i < listing.entries.size(); ++i) {
             EntryRow* row = m_rows->addChild<EntryRow>(
                     listing.entries[i], i % 2 == 1, i,
@@ -223,6 +246,7 @@ protected:
         m_columnName->setGeometry({30, 98, std::max(0.0, listWidth - 250), 18});
         m_columnSize->setGeometry({listWidth - 206, 98, 90, 18});
         m_columnDate->setGeometry({listWidth - 106, 98, 100, 18});
+        m_emptyHint->setGeometry({24, 200, std::max(0.0, rect.width - 48), 32});
         m_scroll->setGeometry({12, 118, listWidth, std::max(0.0, rect.height - 156)});
         m_status->setGeometry({24, rect.height - 30, std::max(0.0, rect.width - 48), 18});
     }
@@ -272,6 +296,7 @@ private:
     Label* m_columnName = nullptr;
     Label* m_columnSize = nullptr;
     Label* m_columnDate = nullptr;
+    Label* m_emptyHint = nullptr;
     ScrollView* m_scroll = nullptr;
     Column* m_rows = nullptr;
     Label* m_status = nullptr;
