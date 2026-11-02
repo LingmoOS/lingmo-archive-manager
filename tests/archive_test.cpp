@@ -1,4 +1,4 @@
-﻿// SPDX-FileCopyrightText: 2026 LingmoOS Contributors
+// SPDX-FileCopyrightText: 2026 LingmoOS Contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "archiveentry.h"

@@ -1,4 +1,4 @@
-﻿find_package(GTest REQUIRED)
+find_package(GTest REQUIRED)
 include(GoogleTest)
 
 add_executable(archive-manager-tests archive_test.cpp)

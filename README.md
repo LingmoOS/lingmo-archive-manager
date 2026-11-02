@@ -1,4 +1,4 @@
-﻿# lingmo-archive-manager
+# lingmo-archive-manager
 
 A native archive manager for Lingmo OS, based on libarchive.
 
