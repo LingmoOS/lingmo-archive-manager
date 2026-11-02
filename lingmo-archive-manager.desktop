@@ -1,10 +1,9 @@
-[Desktop Entry]
+﻿[Desktop Entry]
 Version=1.0
 Name=Archive Manager
-Name[zh_CN]=压缩管理器
-Comment=Open, extract and create archives
+Name[zh_CN]=鍘嬬缉绠＄悊鍣?Comment=Open, extract and create archives
 Exec=lingmo-archive-manager %U
-Icon=package-x-generic
+Icon=lingmo-archive-manager
 Terminal=false
 Type=Application
 Categories=Utility;Archiving;Compression;
