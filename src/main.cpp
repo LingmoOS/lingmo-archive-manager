@@ -103,13 +103,16 @@ private:
 class ArchiveRoot : public View
 {
 public:
-    explicit ArchiveRoot(std::function<void()> open, std::function<void()> extract)
+    explicit ArchiveRoot(std::function<void()> open, std::function<void()> extract,
+                         std::function<void()> compress)
         : m_openAction(std::move(open))
         , m_extractAction(std::move(extract))
+        , m_compressAction(std::move(compress))
     {
         m_title = addChild<Label>(tr("Archive Manager"));
         m_title->setFontSize(18);
         m_title->setWeight(600);
+        m_compress = addChild<Button>(tr("New Archive"));
         m_open = addChild<Button>(tr("Open"));
         m_extract = addChild<Button>(tr("Extract All"));
         m_info = addChild<Label>(tr("No archive open"));
@@ -135,6 +138,7 @@ public:
         m_status->setElide(Label::Elide::Middle);
         m_open->onClicked = [this] { m_openAction(); };
         m_extract->onClicked = [this] { m_extractAction(); };
+        m_compress->onClicked = [this] { m_compressAction(); };
     }
 
     void showListing(const archivemanager::Listing& listing)
@@ -172,8 +176,9 @@ protected:
     {
         const RectF rect = localRect();
         m_title->setGeometry({24, 16, 240, 28});
-        m_open->setGeometry({rect.width - 300, 12, 84, 34});
-        m_extract->setGeometry({rect.width - 204, 12, 112, 34});
+        m_compress->setGeometry({rect.width - 448, 12, 120, 34});
+        m_open->setGeometry({rect.width - 312, 12, 84, 34});
+        m_extract->setGeometry({rect.width - 216, 12, 112, 34});
         m_info->setGeometry({24, 68, std::max(0.0, rect.width - 48), 20});
         const double listWidth = std::max(0.0, rect.width - 24);
         m_columnName->setGeometry({30, 98, std::max(0.0, listWidth - 250), 18});
@@ -194,7 +199,9 @@ protected:
 private:
     std::function<void()> m_openAction;
     std::function<void()> m_extractAction;
+    std::function<void()> m_compressAction;
     Label* m_title = nullptr;
+    Button* m_compress = nullptr;
     Button* m_open = nullptr;
     Button* m_extract = nullptr;
     Label* m_info = nullptr;
@@ -216,7 +223,8 @@ public:
         m_window.resize({1000, 720});
         m_window.setMinimumSize({640, 440});
         auto root = std::make_unique<ArchiveRoot>([this] { openWithChooser(); },
-                                                 [this] { extractAll(); });
+                                                 [this] { extractAll(); },
+                                                 [this] { compressFolder(); });
         m_root = root.get();
         m_window.setContentView(std::move(root));
     }
@@ -273,12 +281,57 @@ public:
             m_root->setStatus(tr("Extracted to ") + destination.string());
     }
 
+    void compressFolder()
+    {
+        m_chooser = std::make_unique<FileChooser>(&m_window);
+        m_chooser->setMode(FileChooser::Mode::OpenFolder);
+        m_chooser->setTitle(tr("Choose a folder to compress"));
+        m_chooser->onAccepted = [this](const std::vector<std::string>& paths, const std::string&) {
+            if (paths.empty())
+                return;
+            const std::string source = paths.front();
+            m_saveChooser = std::make_unique<FileChooser>(&m_window);
+            m_saveChooser->setMode(FileChooser::Mode::SaveFile);
+            m_saveChooser->setTitle(tr("Save Archive"));
+            m_saveChooser->setCurrentFolder(std::filesystem::path(source).parent_path().string());
+            m_saveChooser->setCurrentFile(
+                    (std::filesystem::path(source).filename().string().empty()
+                             ? std::string("archive")
+                             : std::filesystem::path(source).filename().string())
+                    + ".zip");
+            m_saveChooser->setFilters({{tr("ZIP archive"), {"*.zip"}, {}},
+                                      {tr("Tar archive"), {"*.tar", "*.tar.gz", "*.tgz"}, {}}});
+            m_saveChooser->onAccepted = [this, source](const std::vector<std::string>& files,
+                                                       const std::string&) {
+                if (files.empty())
+                    return;
+                archivemanager::CreateFormat format = archivemanager::CreateFormat::Zip;
+                if (!archivemanager::createFormatForPath(files.front(), &format)) {
+                    m_root->setStatus(tr("Use a .zip, .tar or .tar.gz file name"));
+                    return;
+                }
+                const archivemanager::CreateResult result =
+                        archivemanager::createArchive(files.front(), {source}, format);
+                if (!result.ok) {
+                    m_root->setStatus(result.error.empty() ? tr("Could not create the archive")
+                                                           : result.error);
+                    return;
+                }
+                openArchive(files.front());
+                m_root->setStatus(tr("Archive created"));
+            };
+            m_saveChooser->open();
+        };
+        m_chooser->open();
+    }
+
     const archivemanager::Listing& listing() const { return m_listing; }
 
 private:
     Window m_window;
     ArchiveRoot* m_root = nullptr;
     std::unique_ptr<FileChooser> m_chooser;
+    std::unique_ptr<FileChooser> m_saveChooser;
     archivemanager::Listing m_listing;
     std::string m_path;
 };
