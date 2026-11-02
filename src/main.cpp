@@ -50,7 +50,7 @@ std::string dateText(const archivemanager::Entry& entry)
     std::tm local{};
     localtime_r(&time, &local);
     char buffer[32];
-    std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M", &local);
+    std::strftime(buffer, sizeof(buffer), "%Y-%m-%d", &local);
     return buffer;
 }
 
