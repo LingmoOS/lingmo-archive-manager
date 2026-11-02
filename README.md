@@ -5,8 +5,8 @@ A native archive manager for Lingmo OS, based on libarchive.
 ## Features
 
 - Open zip, tar, tar.gz, 7z and rar archives.
-- List paths, sizes and modified times.
-- Extract every entry with safe path handling.
+- Select entries and extract them, or extract everything, to a folder you choose.
+- Create a new ZIP, TAR or TAR.GZ from a folder.
 - Light and dark themes.
 
 ## Build

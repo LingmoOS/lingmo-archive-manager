@@ -50,3 +50,25 @@ TEST(ArchiveCreate, WritesAZipThatCanBeListedAgain) {
     EXPECT_TRUE(sawFile);
     std::filesystem::remove_all(root);
 }
+
+TEST(ArchiveExtract, ExtractsTheSampleIntoAFolder)
+{
+    const std::string archivePath = std::string(ARCHIVE_SOURCE_DIR) + "/tests/data/sample.zip";
+    const archivemanager::Listing listing = archivemanager::listArchive(archivePath);
+    ASSERT_TRUE(listing.ok) << listing.error;
+    const std::filesystem::path destination =
+            std::filesystem::temp_directory_path() / "lingmo-archive-manager-extract";
+    std::filesystem::remove_all(destination);
+    std::filesystem::create_directories(destination);
+    std::vector<size_t> selected(listing.entries.size());
+    for (size_t i = 0; i < selected.size(); ++i)
+        selected[i] = i;
+    const archivemanager::ExtractResult result = archivemanager::extractArchive(
+            archivePath, listing.entries, selected, destination.string(),
+            archivemanager::ExtractOptions {});
+    ASSERT_TRUE(result.ok) << result.error;
+    EXPECT_EQ(result.files, 3u);
+    EXPECT_TRUE(std::filesystem::exists(destination / "readme.txt"));
+    EXPECT_TRUE(std::filesystem::exists(destination / "documents/notes/hello.txt"));
+    std::filesystem::remove_all(destination);
+}

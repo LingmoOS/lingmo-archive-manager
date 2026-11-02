@@ -57,10 +57,14 @@ std::string dateText(const archivemanager::Entry& entry)
 class EntryRow : public View
 {
 public:
-    explicit EntryRow(const archivemanager::Entry& entry, bool alternate)
+    EntryRow(const archivemanager::Entry& entry, bool alternate, size_t index,
+             std::function<void(size_t)> onSelected)
         : m_alternate(alternate)
+        , m_index(index)
+        , m_onSelected(std::move(onSelected))
     {
         setLayoutHints({.fillWidth = true});
+        setCursorShape(CursorShape::Pointer);
         m_name = addChild<Label>(entry.relativePath.empty() ? entry.path : entry.relativePath);
         m_name->setFontSize(13);
         m_name->setElide(Label::Elide::Middle);
@@ -74,7 +78,19 @@ public:
         m_date->setTextAlignment(Label::TextAlignment::Right);
     }
 
+    void setSelected(bool selected)
+    {
+        if (m_selected == selected)
+            return;
+        m_selected = selected;
+        requestPaint();
+    }
+
+    bool isSelected() const { return m_selected; }
+
     SizeF sizeHint() const override { return {0, 34}; }
+
+    bool acceptsPointer() const override { return true; }
 
 protected:
     void layout() override
@@ -88,12 +104,26 @@ protected:
 
     void paint(Painter& painter) override
     {
-        if (m_alternate)
-            painter.fillRect(localRect(), Theme::current().disabledText.withAlpha(0.04));
+        const Theme& theme = Theme::current();
+        if (m_selected)
+            painter.fillRect(localRect(), theme.highlight.withAlpha(0.16));
+        else if (m_alternate)
+            painter.fillRect(localRect(), theme.disabledText.withAlpha(0.04));
+    }
+
+    void pointerPress(const PointerEvent& event) override
+    {
+        if (event.button != MouseButton::Left)
+            return;
+        if (m_onSelected)
+            m_onSelected(m_index);
     }
 
 private:
     bool m_alternate;
+    bool m_selected = false;
+    size_t m_index;
+    std::function<void(size_t)> m_onSelected;
     Label* m_name = nullptr;
     Label* m_size = nullptr;
     Label* m_date = nullptr;
@@ -103,7 +133,8 @@ private:
 class ArchiveRoot : public View
 {
 public:
-    explicit ArchiveRoot(std::function<void()> open, std::function<void()> extract,
+    explicit ArchiveRoot(std::function<void()> open,
+                         std::function<void(const std::vector<size_t>&)> extract,
                          std::function<void()> compress)
         : m_openAction(std::move(open))
         , m_extractAction(std::move(extract))
@@ -137,29 +168,37 @@ public:
         m_status->setColor(ColorRecipe(ColorId::DisabledText));
         m_status->setElide(Label::Elide::Middle);
         m_open->onClicked = [this] { m_openAction(); };
-        m_extract->onClicked = [this] { m_extractAction(); };
+        m_extract->onClicked = [this] { m_extractAction(m_selected); };
         m_compress->onClicked = [this] { m_compressAction(); };
     }
 
-    void showListing(const archivemanager::Listing& listing)
+    void showListing(const archivemanager::Listing& listing, const std::string& formatLabel = {})
     {
         while (!m_rows->children().empty())
             m_rows->takeChild(m_rows->children().front().get());
+        m_entryRows.clear();
+        m_selected.clear();
         if (!listing.ok) {
             m_info->setText(listing.error.empty() ? tr("Could not read this archive") : listing.error);
             m_status->setText({});
+            m_extract->setText(tr("Extract All"));
             requestLayout();
             return;
         }
         std::string info = std::to_string(listing.entries.size()) + tr(" entries");
-        if (!listing.formatName.empty())
-            info += "  " + listing.formatName;
-        if (!listing.filterName.empty())
-            info += " / " + listing.filterName;
+        if (!formatLabel.empty())
+            info += "  " + formatLabel;
+        if (listing.unsafePaths > 0)
+            info += "  · " + std::to_string(listing.unsafePaths) + tr(" unsafe paths");
         m_info->setText(info);
-        for (size_t i = 0; i < listing.entries.size(); ++i)
-            m_rows->addChild<EntryRow>(listing.entries[i], i % 2 == 1);
+        for (size_t i = 0; i < listing.entries.size(); ++i) {
+            EntryRow* row = m_rows->addChild<EntryRow>(
+                    listing.entries[i], i % 2 == 1, i,
+                    [this](size_t index) { toggleSelection(index); });
+            m_entryRows.push_back(row);
+        }
         m_status->setText({});
+        updateSelectionUi();
         requestLayout();
     }
 
@@ -176,9 +215,9 @@ protected:
     {
         const RectF rect = localRect();
         m_title->setGeometry({24, 16, 240, 28});
-        m_compress->setGeometry({rect.width - 448, 12, 120, 34});
-        m_open->setGeometry({rect.width - 312, 12, 84, 34});
-        m_extract->setGeometry({rect.width - 216, 12, 112, 34});
+        m_compress->setGeometry({rect.width - 454, 12, 120, 34});
+        m_open->setGeometry({rect.width - 318, 12, 84, 34});
+        m_extract->setGeometry({rect.width - 226, 12, 140, 34});
         m_info->setGeometry({24, 68, std::max(0.0, rect.width - 48), 20});
         const double listWidth = std::max(0.0, rect.width - 24);
         m_columnName->setGeometry({30, 98, std::max(0.0, listWidth - 250), 18});
@@ -197,8 +236,33 @@ protected:
     }
 
 private:
+    void toggleSelection(size_t index)
+    {
+        const auto found = std::find(m_selected.begin(), m_selected.end(), index);
+        if (found == m_selected.end())
+            m_selected.push_back(index);
+        else
+            m_selected.erase(found);
+        if (index < m_entryRows.size())
+            m_entryRows[index]->setSelected(found == m_selected.end());
+        updateSelectionUi();
+    }
+
+    void updateSelectionUi()
+    {
+        if (m_selected.empty()) {
+            m_extract->setText(tr("Extract All"));
+            if (m_status->text().empty())
+                m_status->setText({});
+        } else {
+            m_extract->setText(tr("Extract ") + std::to_string(m_selected.size()));
+            m_status->setText(tr("Selected ") + std::to_string(m_selected.size()));
+        }
+        requestLayout();
+    }
+
     std::function<void()> m_openAction;
-    std::function<void()> m_extractAction;
+    std::function<void(const std::vector<size_t>&)> m_extractAction;
     std::function<void()> m_compressAction;
     Label* m_title = nullptr;
     Button* m_compress = nullptr;
@@ -211,6 +275,8 @@ private:
     ScrollView* m_scroll = nullptr;
     Column* m_rows = nullptr;
     Label* m_status = nullptr;
+    std::vector<EntryRow*> m_entryRows;
+    std::vector<size_t> m_selected;
 };
 
 // One window and the archive it shows.
@@ -222,9 +288,10 @@ public:
         m_window.setTitle(tr("Archive Manager"));
         m_window.resize({1000, 720});
         m_window.setMinimumSize({640, 440});
-        auto root = std::make_unique<ArchiveRoot>([this] { openWithChooser(); },
-                                                 [this] { extractAll(); },
-                                                 [this] { compressFolder(); });
+        auto root = std::make_unique<ArchiveRoot>(
+                [this] { openWithChooser(); },
+                [this](const std::vector<size_t>& selected) { extractSelected(selected); },
+                [this] { compressFolder(); });
         m_root = root.get();
         m_window.setContentView(std::move(root));
     }
@@ -235,7 +302,8 @@ public:
     {
         m_path = path;
         m_listing = archivemanager::listArchive(path);
-        m_root->showListing(m_listing);
+        m_root->showListing(m_listing,
+                            archivemanager::formatLabel(path, m_listing.formatName, m_listing.filterName));
     }
 
     void openWithChooser()
@@ -255,30 +323,50 @@ public:
         m_chooser->open();
     }
 
-    void extractAll()
+    void extractSelected(const std::vector<size_t>& requested)
     {
         if (!m_listing.ok || m_listing.entries.empty()) {
             m_root->setStatus(tr("Open an archive first"));
             return;
         }
-        std::filesystem::path destination =
-                std::filesystem::path(base::paths::home()) / "Downloads" / std::filesystem::path(m_path).stem();
-        std::error_code error;
-        std::filesystem::create_directories(destination, error);
-        if (error) {
-            m_root->setStatus(tr("Could not create the extraction folder"));
-            return;
+        std::vector<size_t> selected = requested;
+        if (selected.empty()) {
+            selected.reserve(m_listing.entries.size());
+            for (size_t i = 0; i < m_listing.entries.size(); ++i)
+                selected.push_back(i);
         }
-        std::vector<size_t> selected;
-        selected.reserve(m_listing.entries.size());
-        for (size_t i = 0; i < m_listing.entries.size(); ++i)
-            selected.push_back(i);
-        const archivemanager::ExtractResult result = archivemanager::extractArchive(
-                m_path, m_listing.entries, selected, destination.string(), archivemanager::ExtractOptions {});
-        if (!result.ok)
-            m_root->setStatus(result.error.empty() ? tr("Extraction failed") : result.error);
-        else
-            m_root->setStatus(tr("Extracted to ") + destination.string());
+
+        m_extractChooser = std::make_unique<FileChooser>(&m_window);
+        m_extractChooser->setMode(FileChooser::Mode::OpenFolder);
+        m_extractChooser->setTitle(tr("Choose where to extract"));
+        m_extractChooser->setAcceptLabel(tr("Extract Here"));
+        m_extractChooser->setCurrentFolder(base::paths::userDirectory(
+                base::paths::UserDirectory::Downloads));
+        m_extractChooser->onAccepted =
+                [this, selected](const std::vector<std::string>& paths, const std::string&) {
+                    if (paths.empty())
+                        return;
+                    const std::string destination = paths.front();
+                    m_root->setStatus(tr("Extracting…"));
+                    const archivemanager::ExtractResult result = archivemanager::extractArchive(
+                            m_path, m_listing.entries, selected, destination,
+                            archivemanager::ExtractOptions {},
+                            [this](const archivemanager::Progress& progress) {
+                                if (progress.total > 0)
+                                    m_root->setStatus(tr("Extracting ") + progress.current);
+                            });
+                    if (!result.ok) {
+                        m_root->setStatus(result.error.empty() ? tr("Extraction failed")
+                                                               : result.error);
+                        return;
+                    }
+                    std::string message = tr("Extracted ") + std::to_string(result.files)
+                            + tr(" files to ") + destination;
+                    if (result.skipped > 0)
+                        message += "  · " + std::to_string(result.skipped) + tr(" skipped");
+                    m_root->setStatus(message);
+                };
+        m_extractChooser->open();
     }
 
     void compressFolder()
@@ -332,6 +420,7 @@ private:
     ArchiveRoot* m_root = nullptr;
     std::unique_ptr<FileChooser> m_chooser;
     std::unique_ptr<FileChooser> m_saveChooser;
+    std::unique_ptr<FileChooser> m_extractChooser;
     archivemanager::Listing m_listing;
     std::string m_path;
 };
