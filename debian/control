@@ -1,0 +1,19 @@
+﻿Source: lingmo-archive-manager
+Section: utils
+Priority: optional
+Maintainer: Lingmo OS Team <team@lingmo.org>
+Build-Depends: cmake,
+               debhelper-compat (= 13),
+               lingmo-sdk-dev,
+               libarchive-dev,
+               pkg-config
+Standards-Version: 4.7.2
+Homepage: https://github.com/LingmoOS/lingmo-archive-manager
+
+Package: lingmo-archive-manager
+Architecture: any
+Depends: lingmo-sdk-dev,
+         ${misc:Depends},
+         ${shlibs:Depends}
+Description: Lingmo OS Archive Manager
+ Open, list and extract archive files.

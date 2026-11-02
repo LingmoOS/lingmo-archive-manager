@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Name=Archive Manager
+Name[zh_CN]=压缩管理器
+Comment=Open, extract and create archives
+Exec=lingmo-archive-manager %U
+Icon=package-x-generic
+Terminal=false
+Type=Application
+Categories=Utility;Archiving;Compression;
+Keywords=Archive;Zip;Tar;Compress;Extract;
+MimeType=application/zip;application/x-tar;application/gzip;application/x-gzip;application/x-bzip2;application/x-xz;application/x-7z-compressed;application/vnd.rar;application/x-rar-compressed;
+StartupNotify=true

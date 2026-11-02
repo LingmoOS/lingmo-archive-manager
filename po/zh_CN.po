@@ -1,0 +1,20 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: zh_CN\n"
+
+#: src/main.cpp
+msgid "Archive Manager"
+msgstr "压缩管理器"
+
+#: src/main.cpp
+msgid "Open Archive"
+msgstr "打开压缩包"
+
+#: src/main.cpp
+msgid "Extract All"
+msgstr "全部解压"
+
+#: src/main.cpp
+msgid "No archive open"
+msgstr "未打开压缩包"
