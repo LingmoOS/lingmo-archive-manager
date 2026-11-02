@@ -116,6 +116,15 @@ public:
         m_info->setFontSize(13);
         m_info->setColor(ColorRecipe(ColorId::DisabledText));
         m_info->setElide(Label::Elide::Middle);
+        m_columnName = addChild<Label>(tr("Name"));
+        m_columnSize = addChild<Label>(tr("Size"));
+        m_columnDate = addChild<Label>(tr("Modified"));
+        for (Label* label : {m_columnName, m_columnSize, m_columnDate}) {
+            label->setFontSize(11);
+            label->setColor(ColorRecipe(ColorId::DisabledText));
+        }
+        m_columnSize->setTextAlignment(Label::TextAlignment::Right);
+        m_columnDate->setTextAlignment(Label::TextAlignment::Right);
         m_scroll = addChild<ScrollView>();
         m_scroll->setName("entryScroll");
         m_rows = m_scroll->setContent<Column>();
@@ -166,8 +175,11 @@ protected:
         m_open->setGeometry({rect.width - 300, 12, 84, 34});
         m_extract->setGeometry({rect.width - 204, 12, 112, 34});
         m_info->setGeometry({24, 68, std::max(0.0, rect.width - 48), 20});
-        m_scroll->setGeometry({12, 96, std::max(0.0, rect.width - 24),
-                               std::max(0.0, rect.height - 134)});
+        const double listWidth = std::max(0.0, rect.width - 24);
+        m_columnName->setGeometry({30, 98, std::max(0.0, listWidth - 250), 18});
+        m_columnSize->setGeometry({listWidth - 206, 98, 90, 18});
+        m_columnDate->setGeometry({listWidth - 106, 98, 100, 18});
+        m_scroll->setGeometry({12, 118, listWidth, std::max(0.0, rect.height - 156)});
         m_status->setGeometry({24, rect.height - 30, std::max(0.0, rect.width - 48), 18});
     }
 
@@ -186,6 +198,9 @@ private:
     Button* m_open = nullptr;
     Button* m_extract = nullptr;
     Label* m_info = nullptr;
+    Label* m_columnName = nullptr;
+    Label* m_columnSize = nullptr;
+    Label* m_columnDate = nullptr;
     ScrollView* m_scroll = nullptr;
     Column* m_rows = nullptr;
     Label* m_status = nullptr;
