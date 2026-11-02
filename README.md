@@ -16,3 +16,8 @@ cmake -S . -B build -DCMAKE_PREFIX_PATH=/path/to/lingmo-sdk
 cmake --build build
 sudo cmake --install build
 ```
+
+## Screenshots
+
+![Light theme](docs/screenshot-2026-11-02-light.png)
+![Dark theme](docs/screenshot-2026-11-02-dark.png)
