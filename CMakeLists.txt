@@ -27,6 +27,8 @@ target_compile_definitions(lingmo-archive-manager PRIVATE
     ARCHIVE_MANAGER_VERSION="${PROJECT_VERSION}")
 
 install(TARGETS lingmo-archive-manager RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(FILES icons/lingmo-archive-manager.svg
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps)
 lingmo_add_translations(lingmo-archive-manager SOURCES src
     DESKTOP_FILES lingmo-archive-manager.desktop)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/lingmo-archive-manager.desktop
