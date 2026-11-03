@@ -1,3 +1,9 @@
+lingmo-archive-manager (1.0.1+lingmo5u1) unstable; urgency=medium
+
+  * desktop: use system icon package-x-generic instead of lingmo-archive-manager.
+
+ -- Lingmo OS Team <team@lingmo.org>  Sun, 03 Nov 2026 00:00:00 +0800
+
 lingmo-archive-manager (1.0.0) unstable; urgency=medium
 
   * Initial Lingmo archive manager.
