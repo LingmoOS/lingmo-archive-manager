@@ -1,3 +1,9 @@
+lingmo-archive-manager (1.0.5+lingmo5u1) unstable; urgency=medium
+
+  * fix: use ui/layout.h instead of ui/cell_layout.h for Column type.
+
+ -- Lingmo OS Team <team@lingmo.org>  Thu, 05 Nov 2026 01:00:00 +0800
+
 lingmo-archive-manager (1.0.4+lingmo5u1) unstable; urgency=medium
 
   * fix: add missing #include <ui/cell_layout.h> for Column type.
