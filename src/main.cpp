@@ -8,6 +8,7 @@
 #include "base/i18n.h"
 #include "base/paths.h"
 #include "ui/application.h"
+#include "ui/cell_layout.h"
 #include "ui/file_chooser.h"
 #include "ui/label.h"
 #include "ui/painter.h"
