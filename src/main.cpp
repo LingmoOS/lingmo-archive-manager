@@ -15,6 +15,7 @@
 #include "ui/theme.h"
 #include "ui/view.h"
 #include "ui/window.h"
+#include "ui/window_header.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -140,7 +141,7 @@ private:
     Label* m_date = nullptr;
 };
 
-// The window's content: the title, the actions, the list and the status line.
+// The window's content: header with toolbar, file list and status line.
 class ArchiveRoot : public View
 {
 public:
@@ -151,13 +152,22 @@ public:
         , m_extractAction(std::move(extract))
         , m_compressAction(std::move(compress))
     {
-        m_title = addChild<Label>(tr("Archive Manager"));
-        m_title->setFontSize(18);
-        m_title->setWeight(600);
-        m_compress = addChild<Button>(tr("New Archive"));
-        m_open = addChild<Button>(tr("Open"));
-        m_extract = addChild<Button>(tr("Extract All"));
+        // Window header with title and action buttons.
+        m_header = addChild<WindowHeader>(44.0);
+        m_header->setButtonsCentered(true);
+        m_header->setButtonMargin(4);
+        auto* row = m_header->setContent<RowLayout>();
+        row->setSpacing(8);
+        row->setLayoutHints({.fillWidth = true});
+        auto* titleLabel = row->addChild<Label>(tr("Archive Manager"));
+        titleLabel->setFontSize(14.5);
+        titleLabel->setWeight(600);
+        titleLabel->setLayoutHints({.fillWidth = true});
+        m_compress = row->addChild<Button>(tr("New Archive"));
+        m_open     = row->addChild<Button>(tr("Open"));
+        m_extract  = row->addChild<Button>(tr("Extract All"));
         m_extract->setEnabled(false);
+
         m_info = addChild<Label>(tr("No archive open"));
         m_info->setFontSize(13);
         m_info->setColor(ColorRecipe(ColorId::DisabledText));
@@ -184,8 +194,8 @@ public:
         m_status->setFontSize(12);
         m_status->setColor(ColorRecipe(ColorId::DisabledText));
         m_status->setElide(Label::Elide::Middle);
-        m_open->onClicked = [this] { m_openAction(); };
-        m_extract->onClicked = [this] { m_extractAction(m_selected); };
+        m_open->onClicked     = [this] { m_openAction(); };
+        m_extract->onClicked  = [this] { m_extractAction(m_selected); };
         m_compress->onClicked = [this] { m_compressAction(); };
     }
 
@@ -237,25 +247,32 @@ protected:
     void layout() override
     {
         const RectF rect = localRect();
-        m_title->setGeometry({24, 16, 240, 28});
-        m_compress->setGeometry({rect.width - 454, 12, 120, 34});
-        m_open->setGeometry({rect.width - 318, 12, 84, 34});
-        m_extract->setGeometry({rect.width - 226, 12, 140, 34});
-        m_info->setGeometry({24, 68, std::max(0.0, rect.width - 48), 20});
+        // Header fills the top bar.
+        m_header->setGeometry({0, 0, rect.width, 44});
+        // Info row below the header.
+        m_info->setGeometry({24, 56, std::max(0.0, rect.width - 48), 20});
+        // Column labels.
         const double listWidth = std::max(0.0, rect.width - 24);
-        m_columnName->setGeometry({30, 98, std::max(0.0, listWidth - 250), 18});
-        m_columnSize->setGeometry({listWidth - 206, 98, 90, 18});
-        m_columnDate->setGeometry({listWidth - 106, 98, 100, 18});
+        m_columnName->setGeometry({30, 84, std::max(0.0, listWidth - 250), 18});
+        m_columnSize->setGeometry({listWidth - 206, 84, 90, 18});
+        m_columnDate->setGeometry({listWidth - 106, 84, 100, 18});
+        // Empty hint centred in the list area.
         m_emptyHint->setGeometry({24, 200, std::max(0.0, rect.width - 48), 32});
-        m_scroll->setGeometry({12, 118, listWidth, std::max(0.0, rect.height - 156)});
-        m_status->setGeometry({24, rect.height - 30, std::max(0.0, rect.width - 48), 18});
+        // Scroll list.
+        m_scroll->setGeometry({12, 104, listWidth, std::max(0.0, rect.height - 136)});
+        // Status bar at the bottom.
+        m_status->setGeometry({24, rect.height - 24, std::max(0.0, rect.width - 48), 18});
     }
 
     void paint(Painter& painter) override
     {
         const Theme& theme = Theme::current();
         painter.fillRect(localRect(), theme.background);
-        painter.drawHorizontalLine(0, 60, geometry().width, theme.disabledText.withAlpha(0.08),
+        // Separator under the header.
+        painter.drawHorizontalLine(0, 44, geometry().width, theme.disabledText.withAlpha(0.08),
+                                   painter.borderWidth(1));
+        // Separator above the column labels.
+        painter.drawHorizontalLine(0, 102, geometry().width, theme.disabledText.withAlpha(0.06),
                                    painter.borderWidth(1));
     }
 
@@ -288,7 +305,7 @@ private:
     std::function<void()> m_openAction;
     std::function<void(const std::vector<size_t>&)> m_extractAction;
     std::function<void()> m_compressAction;
-    Label* m_title = nullptr;
+    WindowHeader* m_header = nullptr;
     Button* m_compress = nullptr;
     Button* m_open = nullptr;
     Button* m_extract = nullptr;

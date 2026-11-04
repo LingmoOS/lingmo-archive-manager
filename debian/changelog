@@ -1,3 +1,12 @@
+lingmo-archive-manager (1.0.2+lingmo5u1) unstable; urgency=medium
+
+  * ui: replace manual title Label with a proper WindowHeader; action
+    buttons (New Archive, Open, Extract All) now live in the header's
+    RowLayout content area; layout updated to position all elements
+    relative to the 44px header bar.
+
+ -- Lingmo OS Team <team@lingmo.org>  Wed, 04 Nov 2026 14:30:00 +0800
+
 lingmo-archive-manager (1.0.1+lingmo5u1) unstable; urgency=medium
 
   * desktop: use system icon package-x-generic instead of lingmo-archive-manager.
