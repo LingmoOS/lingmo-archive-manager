@@ -1,3 +1,12 @@
+lingmo-archive-manager (1.0.3+lingmo5u1) unstable; urgency=medium
+
+  * ui: move action buttons (New Archive, Open, Extract All) from the
+    window header into a global menu bar "File" submenu registered via
+    com.canonical.AppMenu.Registrar.  The window now shows only a plain
+    title; Extract All becomes enabled/disabled based on archive state.
+
+ -- Lingmo OS Team <team@lingmo.org>  Wed, 04 Nov 2026 15:30:00 +0800
+
 lingmo-archive-manager (1.0.2+lingmo5u1) unstable; urgency=medium
 
   * ui: replace manual title Label with a proper WindowHeader; action
