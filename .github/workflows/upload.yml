@@ -1,6 +1,7 @@
 name: Upload to OBS
 
-permissions: write-all
+permissions:
+  contents: read
 
 on:
   push:
@@ -34,7 +35,15 @@ jobs:
           mkdir -p src-tar-output
           mv ../*.dsc ../*.tar.* src-tar-output/
 
+      - name: Retain source package
+        uses: actions/upload-artifact@v4
+        with:
+          name: lingmo-archive-manager-source
+          path: src-tar-output/
+          if-no-files-found: error
+
       - name: Upload
+        if: github.event_name == 'push'
         uses: LingmoOS/action-upload-to-obs@0.0.4
         with:
           remove-old-sources: true

@@ -4,10 +4,12 @@ Priority: optional
 Maintainer: Lingmo OS Team <team@lingmo.org>
 Build-Depends: cmake,
                debhelper-compat (= 13),
+               gettext,
                lingmo-sdk-dev,
                libarchive-dev,
                pkg-config
 Standards-Version: 4.7.2
+Rules-Requires-Root: no
 Homepage: https://github.com/LingmoOS/lingmo-archive-manager
 
 Package: lingmo-archive-manager
