@@ -1,62 +1,37 @@
 // SPDX-FileCopyrightText: 2026 LingmoOS Contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
-
-// The real window class lives with the application in main.cpp. Include it
-// without its entry point so the capture program drives exactly that window.
-#define ARCHIVE_MANAGER_NO_MAIN
-#include "../src/main.cpp"
-#undef ARCHIVE_MANAGER_NO_MAIN
-
+#include "archivewindow.h"
 #include "base/event_loop.h"
+#include "ui/application.h"
+#include "ui/theme.h"
 #include <chrono>
-#include <cstdio>
 #include <filesystem>
+#include <fstream>
 #include <poll.h>
-#include <string>
-
-using namespace Lingmo;
+using namespace ArchiveManager;
 using namespace Lingmo::ui;
-
-namespace {
-void spin(int milliseconds)
-{
-    base::EventLoop &loop = Application::instance()->loop();
-    const auto end = std::chrono::steady_clock::now() + std::chrono::milliseconds(milliseconds);
-    while (std::chrono::steady_clock::now() < end) {
-        pollfd descriptor{loop.fd(), POLLIN, 0};
-        ::poll(&descriptor, 1, 10);
-        loop.dispatch();
-    }
+void wait(ArchiveWindow& window) {
+    auto& loop = Application::instance()->loop(); auto end = std::chrono::steady_clock::now() + std::chrono::seconds(20);
+    while (window.busy() && std::chrono::steady_clock::now() < end) { pollfd fd{loop.fd(), POLLIN, 0}; ::poll(&fd, 1, 10); loop.dispatch(); }
 }
-}
-
-int main(int argc, char **argv)
-{
-    if (argc < 2) {
-        std::fprintf(stderr, "usage: %s OUTDIR [ARCHIVE]\n", argv[0]);
-        return 1;
-    }
-    const std::string directory = argv[1];
-    const std::string archivePath =
-            argc > 2 ? argv[2] : ARCHIVE_SOURCE_DIR "/tests/data/sample.zip";
-    std::filesystem::create_directories(directory);
-
+int main(int argc, char** argv) {
+    if (argc != 2) return 1;
+    std::filesystem::create_directories(argv[1]);
+    std::string path = "/tmp/lingmo-archive-capture-XXXXXX"; if (!::mkdtemp(path.data())) return 1;
+    struct Temp { std::filesystem::path path; ~Temp() { std::filesystem::remove_all(path); } } temp{path};
+    std::filesystem::create_directories(path + "/Project/Assets"); std::filesystem::create_directories(path + "/Project/Documents");
+    std::ofstream(path + "/Project/README.md") << "Welcome to Lingmo Archive Manager";
+    std::ofstream(path + "/Project/Documents/Design notes.txt") << std::string(2048, 'd');
+    std::ofstream(path + "/Project/Assets/Wallpaper.txt") << std::string(12000, 'a');
+    std::ofstream(path + "/Project/Changelog.txt") << std::string(640, 'c');
+    auto made = create({path + "/Project"}, path + "/Project.zip", Format::Zip); if (!made.ok()) return 2;
     Application app(argc, argv, Application::Platform::Headless);
-    app.setApplicationId("lingmo-archive-manager");
-
-    for (const bool dark : {false, true}) {
-        Theme::setCurrent(dark ? Theme::dark() : Theme::light());
-        ArchiveWindow window;
-        window.window().setScale(1.5);
-        window.window().resize({1000, 720});
-        window.openArchive(archivePath);
-        window.window().show();
-        for (int i = 0; i < 10; ++i) {
-            window.window().grab();
-            spin(20);
-        }
-        window.window().grab().savePng(
-                directory + "/archive-manager-" + (dark ? "dark" : "light") + ".png");
+    for (bool dark : {false, true}) for (double scale : {1.0, 1.5}) {
+        Theme::setCurrent(dark ? Theme::dark() : Theme::light()); ArchiveWindow window; window.window().setScale(scale); window.show();
+        const std::string suffix = std::string(dark ? "dark" : "light") + (scale == 1 ? "-100" : "-150");
+        window.openArchive(made.output); wait(window); if (window.busy()) return 3; window.navigate("Project");
+        if (!window.window().grab().savePng(std::string(argv[1]) + "/archive-" + suffix + ".png")) return 4;
+        window.newArchive(); window.addSources({path + "/Project"});
+        if (!window.window().grab().savePng(std::string(argv[1]) + "/create-" + suffix + ".png")) return 4;
     }
-    return 0;
 }
