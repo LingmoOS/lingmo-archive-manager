@@ -39,6 +39,38 @@ std::string bytesText(uint64_t value) {
     std::ostringstream stream; stream << std::fixed << std::setprecision(index ? 1 : 0) << size << ' ' << units[index];
     return stream.str();
 }
+// Translate application-owned diagnostics at the UI boundary; retain paths and
+// libarchive/OS diagnostics verbatim. The core stays usable without the UI SDK.
+std::string translatedArchiveDetail(const std::string& detail)
+{
+    static const char* messages[] = {
+        Lingmo::i18n::trNoop("UTF-8 filename locale is unavailable"),
+        Lingmo::i18n::trNoop("Cannot set filename locale"),
+        Lingmo::i18n::trNoop("Archive operation failed"),
+        Lingmo::i18n::trNoop("Cannot allocate archive reader"),
+        Lingmo::i18n::trNoop("Not a supported archive"),
+        Lingmo::i18n::trNoop("Negative archive entry size"),
+        Lingmo::i18n::trNoop("Archive directory conflicts with another entry"),
+        Lingmo::i18n::trNoop("Destination directory is unavailable"),
+        Lingmo::i18n::trNoop("Invalid selected path"),
+        Lingmo::i18n::trNoop("Selected entries are no longer present"),
+        Lingmo::i18n::trNoop("No source files selected"),
+        Lingmo::i18n::trNoop("Cannot allocate archive writer"),
+        Lingmo::i18n::trNoop("Save the archive outside the selected source folder"),
+        Lingmo::i18n::trNoop("Invalid source name: "),
+        Lingmo::i18n::trNoop("Duplicate source name: "),
+        Lingmo::i18n::trNoop("Source file changed: "),
+        Lingmo::i18n::trNoop("Cannot read source: "),
+        Lingmo::i18n::trNoop("Duplicate file entry: "),
+        Lingmo::i18n::trNoop("Conflicting archive entry: "),
+    };
+    for (const auto* source : messages) {
+        const std::string prefix(source);
+        if (detail == prefix || (prefix.ends_with(": ") && detail.starts_with(prefix)))
+            return std::string(tr(source)) + detail.substr(prefix.size());
+    }
+    return detail;
+}
 std::string errorText(const Result& result) {
     switch (result.error) {
     case Error::Canceled: return tr("Operation canceled. No output was committed.");
@@ -46,7 +78,7 @@ std::string errorText(const Result& result) {
     case Error::Exists: return tr("The destination already exists. Choose a new name.");
     case Error::Limit: return tr("The operation exceeds the size or entry limit.");
     case Error::UnsupportedEntry: return tr("This archive contains a link, special file or unsafe path that cannot be extracted.");
-    default: return std::string(tr("Operation failed")) + ": " + result.detail;
+    default: return std::string(tr("Operation failed")) + ": " + translatedArchiveDetail(result.detail);
     }
 }
 class Header : public WindowHeader {

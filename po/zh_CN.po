@@ -240,3 +240,63 @@ msgstr "密码选项"
 
 msgid "Enter a password…"
 msgstr "输入密码…"
+
+msgid "archive;zip;tar;compress;extract;"
+msgstr "归档;zip;tar;压缩;解压;"
+
+msgid "UTF-8 filename locale is unavailable"
+msgstr "UTF-8 文件名语言环境不可用"
+
+msgid "Cannot set filename locale"
+msgstr "无法设置文件名语言环境"
+
+msgid "Archive operation failed"
+msgstr "归档操作失败"
+
+msgid "Cannot allocate archive reader"
+msgstr "无法创建归档读取器"
+
+msgid "Not a supported archive"
+msgstr "不是受支持的归档文件"
+
+msgid "Negative archive entry size"
+msgstr "归档条目大小无效"
+
+msgid "Archive directory conflicts with another entry"
+msgstr "归档目录与其他条目冲突"
+
+msgid "Destination directory is unavailable"
+msgstr "目标目录不可用"
+
+msgid "Invalid selected path"
+msgstr "所选路径无效"
+
+msgid "Selected entries are no longer present"
+msgstr "所选条目已不存在"
+
+msgid "No source files selected"
+msgstr "尚未选择源文件"
+
+msgid "Cannot allocate archive writer"
+msgstr "无法创建归档写入器"
+
+msgid "Save the archive outside the selected source folder"
+msgstr "请将归档保存到所选源文件夹之外"
+
+msgid "Invalid source name: "
+msgstr "源文件名称无效："
+
+msgid "Duplicate source name: "
+msgstr "源文件名称重复："
+
+msgid "Source file changed: "
+msgstr "源文件已改变："
+
+msgid "Cannot read source: "
+msgstr "无法读取源文件："
+
+msgid "Duplicate file entry: "
+msgstr "文件条目重复："
+
+msgid "Conflicting archive entry: "
+msgstr "归档条目冲突："
